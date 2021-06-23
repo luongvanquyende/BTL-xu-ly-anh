@@ -35,7 +35,10 @@ def open_image():
     filepath = askopenfilename()
 
     image_file = Image.open(filepath)
-    r,b,g = image_file.split()
+    if image_file.mode == "RGB":
+        r,b,g = image_file.split()
+    elif image_file.mode == "L":
+        r = b = g = image_file.split()
 
     w_box = 500
     h_box = 350
@@ -261,15 +264,13 @@ def color_to_gray():
     showimg(histE, histright, w_box, h_box)
 
 def resiz(en_wid,en_hei,en_re):
-    print(en_wid)
-    print(en_hei)
     en_re.destroy()
-    resize_img=Tk()
-    resize_img.title("New img")
-    image=image_file.resize((en_wid,en_hei))
-    my_img = ImageTk.PhotoImage(image)
-    lbl = tk.Label(resize_img, image = my_img).pack()
-    resize_img.mainloop()
+    window = tk.Toplevel()
+    #window.geometry("500x500") # (optional)    
+    resize_image=image_file.resize((en_wid,en_hei))
+    img = ImageTk.PhotoImage(image = resize_image)
+    lbl = tk.Label(window, image = img).pack()
+    window.mainloop()
 
 def resize_box():
     en_re = Tk()
@@ -286,8 +287,7 @@ def resize_box():
     en_hei.grid(row=0,column=3,padx=(4,20),pady=(10,4))
 
     en_btn=Button(en_re,text="Resize",relief='ridge',width=10,font="Tahoma 12 bold",fg="white",bg="#2b2b2b",command=lambda : resiz(int(en_wid.get()),int(en_hei.get()),en_re))
-    en_btn.grid(row=1,columnspan=4,padx="5px",pady=(10,10))
-   
+    en_btn.grid(row=1,columnspan=4,padx="5px",pady=(10,10))  
 
 def change_brightness(gamma_change):
     global gamma
@@ -303,6 +303,30 @@ def change_brightness(gamma_change):
     showimg(new_img, imgright, w_box, h_box)
     histE = Image.open('images/tempright.png')
     showimg(histE, histright, w_box, h_box)
+
+def im_crop_center(img, w, h):
+    img_width, img_height = img.size
+    left, right = (img_width - w) / 2, (img_width + w) / 2
+    top, bottom = (img_height - h) / 2, (img_height + h) / 2
+    left, top = round(max(0, left)), round(max(0, top))
+    right, bottom = round(min(img_width - 0, right)), round(min(img_height - 0, bottom))
+    return img.crop((left, top, right, bottom))
+
+def change_size_to_916():
+    width, height = image_file.size
+    if (width / height) < (16 / 9):
+        width = (width // 16) * 16
+        height = (width // 16) * 9
+    else: 
+        height = (height // 9) * 9
+        width = (height // 9) * 16
+    
+    size_916 = tk.Toplevel()
+    #window.geometry("500x500") # (optional)   
+    resize_image = im_crop_center(image_file, width, height)
+    img = ImageTk.PhotoImage(image = resize_image)
+    lbl = tk.Label(size_916, image = img).pack()
+    size_916.mainloop()
 
 
 root = tk.Tk()
@@ -334,6 +358,7 @@ color.add_command(label='Gray',command=color_to_gray)
 transforms = tk.Menu(menubar, tearoff=0)
 transforms.add_command(label='Crop Image', command=crop_image)
 transforms.add_command(label='Resize', command=resize_box)
+transforms.add_command(label='9:16', command=change_size_to_916)
 
 contrast = tk.Menu(menubar, tearoff=0)
 contrast.add_command(label='Up', command=bright_up_contrast)
